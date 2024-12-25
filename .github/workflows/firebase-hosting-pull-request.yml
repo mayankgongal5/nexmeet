@@ -1,0 +1,65 @@
+name: Deploy to Firebase Hosting
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  pull_request:
+    branches:
+      - main
+      - dev
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Create .env File
+        run: |
+          echo "VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}" >> .env
+          echo "VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}" >> .env
+          echo "VITE_BASE_URL=${{ secrets.VITE_BASE_URL }}" >> .env
+
+      - name: Install Dependencies
+        run: |
+          npm ci
+          npm run build
+
+      - name: Setup Firebase CLI
+        uses: w9jds/firebase-action@master
+        with:
+          args: --version
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+
+      - name: Deploy to Firebase Hosting
+        if: github.event_name == 'push'
+        run: |
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            firebase deploy --only hosting:main-site
+          elif [ "${{ github.ref }}" == "refs/heads/dev" ]; then
+            firebase deploy --only hosting:dev-site
+          fi
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+
+      - name: Deploy to Preview Channel
+        if: github.event_name == 'pull_request'
+        run: |
+          firebase hosting:channel:deploy preview-${{ github.event.pull_request.number }}
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+
+      - name: Output Preview URL
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "Preview URL: https://${{ github.event.repository.name }}--preview-${{ github.event.pull_request.number }}.web.app"
