@@ -1,14 +1,10 @@
 {
-  "hosting": [
-    {
-      "site": "main-site",
-      "public": "dist",
-      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"]
-    },
-    {
-      "site": "dev-site",
-      "public": "dist",
-      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"]
-    }
-  ]
+  "hosting": {
+    "public": "dist",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ]
+  }
 }
